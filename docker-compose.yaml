@@ -1,0 +1,61 @@
+version: "3.5"
+
+networks:
+  kong-net:
+    driver: bridge
+
+services:
+  kong:
+    image: kong-naxsi
+    container_name: kong-naxsi
+#    image: kong:2.8.0
+#    container_name: kong
+    restart: always
+    networks:
+      - kong-net
+    volumes:
+      - ${PWD}/kong.yml:/kong/declarative/kong.yml
+      - ${PWD}/scanner.rules:/etc/kong/naxsi_rules/scanner.rules
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+      KONG_ADMIN_GUI_URL: http://localhost:8002
+      KONG_NGINX_HTTP_INCLUDE: "/etc/kong/custom_http.conf"
+      KONG_ENABLE_NAXSI: "true"
+      KONG_NAXSI_JSON_LOG: "false"
+      KONG_NAXSI_CHECK_RULES: |
+        #IgnoreIP   "172.19.0.1";
+        BasicRule wl:1,2,10,11,12,13,14,15,16,19,20;
+                LibInjectionXss;
+                CheckRule "$$LIBINJECTION_XSS >= 8" BLOCK;
+                LibInjectionSql;
+                CheckRule "$$LIBINJECTION_SQL >= 8" BLOCK;
+                CheckRule "$$SQL >= 8" BLOCK;
+                CheckRule "$$RFI >= 8" BLOCK;
+                CheckRule "$$TRAVERSAL >= 4" BLOCK;
+                CheckRule "$$EVADE >= 4" BLOCK;
+                CheckRule "$$XSS >= 8" BLOCK;
+                CheckRule "$$UWA >= 8" BLOCK;
+    ports:
+      - "8000:8000"
+      - "9443:8443"
+      - "8001:8001"
+      - "8444:8444"
+      - "8002:8002"
+      - "8445:8445"
+      - "8003:8003"
+      - "8004:8004"
+ 
+  web1:
+    image: nginxdemos/hello:latest
+    container_name: web1
+    restart: always
+    networks:
+      - kong-net
+    ports:
+      - "9091:80"

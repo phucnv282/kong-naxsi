@@ -1,0 +1,8 @@
+include:
+  - project: 'digilife/workloads/ci-template'
+    ref: master
+    file: '/gitlab-ci.v1.0.yaml'
+
+variables:
+  IMAGE_REPOSITORY: asia.gcr.io/teko-registry/sre/kong-naxsi
+
